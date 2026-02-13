@@ -1,0 +1,37 @@
+{
+  "Chill Vibes": {
+    "shuffle": true,
+    "songs": [
+      "Lofi hip hop radio - beats to study",
+      "https://www.youtube.com/watch?v=5qap5aO4i9A",
+      "Childish Gambino - Redbone"
+    ]
+  },
+  "Workout": {
+    "shuffle": true,
+    "songs": [
+      "Its my life - Bon Jovi",
+      "Eye of the tiger - Survivor",
+      "Stronger - Kanye West"
+    ]
+  },
+  "Focus": {
+    "shuffle": false,
+    "songs": [
+      "Concentration music - classical",
+      "Ambient study music"
+    ]
+  },
+  "Pinik": {
+    "shuffle": false,
+    "songs": [
+      "Måneskin - I WANNA BE YOUR SLAVE",
+      "Take Over (ft. Jeremy McKinnon (A Day To Remember), MAX, Henry) | Worlds 2020 - League of Legends",
+      "Ionut Cercel - Made in Romania",
+      "Bad Boys (From Cops)",
+      "Skillet - Monster (Official Video)",
+      "Coolio - Gangsta's Paradise (feat. L.V.) [Official Music Video]",
+      "Abar Jigay || আবার জিগায় || Stoic Bliss"
+    ]
+  }
+}
