@@ -10,7 +10,6 @@
     "@discordjs/voice": "^0.19.0",
     "@snazzah/davey": "^0.1.9",
     "discord.js": "^14.14.1",
-    "dotenv": "^16.3.1",
-    "youtube-sr": "^4.3.12"
+    "dotenv": "^16.3.1"
   }
 }

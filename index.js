@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { spawn } = require('child_process');
+const { spawn, execFile } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const {
@@ -15,7 +15,6 @@ const {
   AudioPlayerStatus,
   getVoiceConnection,
 } = require('@discordjs/voice');
-const YouTube = require('youtube-sr').default;
 
 // Per-guild state: { connection, player, queue, currentTrack, voiceChannelId }
 const guildPlayers = new Map();
@@ -42,24 +41,38 @@ function shuffleArray(arr) {
   return a;
 }
 
+const YOUTUBE_URL = /^(https?:\/\/)?(www\.|m\.|music\.)?(youtube\.com|youtu\.be)\/.+/;
+
+// Look up a song with yt-dlp: a YouTube URL gives its title, anything else is searched.
+// Returns { title, url } or null when nothing is found.
+function lookupSong(query) {
+  const target = YOUTUBE_URL.test(query) ? query : `ytsearch1:${query}`;
+  return new Promise((resolve) => {
+    execFile('yt-dlp', [
+      '--no-warnings', '--flat-playlist', '--no-playlist',
+      '--print', '%(title)s\t%(webpage_url)s',
+      target,
+    ], { timeout: 30000 }, (error, stdout, stderr) => {
+      const line = String(stdout || '').trim().split('\n')[0];
+      const [title, url] = line.split('\t');
+      if (!url || !url.startsWith('http')) {
+        if (error) console.error('yt-dlp lookup failed:', (stderr || error.message).toString().trim());
+        return resolve(null);
+      }
+      resolve({ title: title || 'YouTube video', url });
+    });
+  });
+}
+
 async function resolveSong(query) {
   if (typeof query === 'object' && query?.url) {
     return { title: query.title || 'YouTube video', url: query.url };
   }
   const trimmed = String(query).trim();
-  const isYoutubeUrl = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/.test(trimmed);
-
-  if (isYoutubeUrl) {
-    try {
-      const video = await YouTube.getVideo(trimmed);
-      return { title: video?.title || 'YouTube video', url: trimmed };
-    } catch {
-      return { title: 'YouTube video', url: trimmed };
-    }
-  }
-  const video = await YouTube.searchOne(trimmed);
-  if (!video || !video.url) return null;
-  return { title: video.title, url: video.url };
+  const found = await lookupSong(trimmed);
+  if (found) return found;
+  // A URL that yt-dlp couldn't read: still try to play it.
+  return YOUTUBE_URL.test(trimmed) ? { title: 'YouTube video', url: trimmed } : null;
 }
 
 // Stream audio from YouTube using yt-dlp
@@ -273,33 +286,11 @@ client.on('messageCreate', async (message) => {
     }
 
     try {
-      let videoUrl;
-      let songTitle = rest;
-
-      const isYoutubeUrl = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/.test(rest);
-
-      if (isYoutubeUrl) {
-        videoUrl = rest;
-        try {
-          const video = await YouTube.getVideo(videoUrl);
-          if (video?.title) songTitle = video.title;
-        } catch {
-          songTitle = 'YouTube video';
-        }
-      } else {
-        const video = await YouTube.searchOne(rest);
-        if (!video || !video.url) {
-          return message.reply('No results found for that search.');
-        }
-        videoUrl = video.url;
-        songTitle = video.title || rest;
+      const track = await resolveSong(rest);
+      if (!track) {
+        return message.reply('No results found for that search.');
       }
-
-      if (!videoUrl) {
-        return message.reply('Could not get a valid video URL.');
-      }
-
-      playTrack(guildId, voiceChannel.id, message.guild.voiceAdapterCreator, { title: songTitle, url: videoUrl }, message.channel);
+      playTrack(guildId, voiceChannel.id, message.guild.voiceAdapterCreator, track, message.channel);
     } catch (error) {
       console.error('Play error:', error);
       message.reply(`Failed to play: ${error.message}`);
