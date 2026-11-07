@@ -112,3 +112,11 @@ npm start
 | `DISCORD_BOT_TOKEN` | Your Discord bot token from the Developer Portal |
 
 cd "d:\My Development Journey\moozic-bot"
+## Deployment (Docker / Coolify)
+
+The `Dockerfile` bundles Node 22, FFmpeg and yt-dlp (updated on every container start), so nothing needs installing on the host.
+
+- Build pack: Dockerfile. No domain or port is needed; the bot only connects out to Discord and YouTube.
+- Environment variable: `DISCORD_BOT_TOKEN`.
+- Run only one copy with the same token. If it also runs locally, both reply to every command.
+- If songs stop playing after a YouTube change, restart the container to pick up the newest yt-dlp.
